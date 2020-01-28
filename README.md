@@ -1,17 +1,319 @@
-# Asynchronous task managing
+# Asynchronous tasks managing
+Sometimes there is need to cancel some asynchronous execution while launching a new one with the same id, sometimes vice versa. It's not comfortable to control it in each place that contains asynchronous code. This library provides an easy API to control every asynchronous task (Coroutines, Rx, or something else). More details of the usage can be found in Medium post (I'll post it in a few days).
 
-One Paragraph of project desbicription goes here
+## Getting Started with TaskHandler
 
-## Getting Started
+Follow this instructions to implement this library in your project
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+1. add to **module** `build.gradle`
+```
+implementation "dev.temirlan.common:task:$task_version"
+```
+2. implement your own `Task` or find some that matching your preferences(Coroutines or Rx) from samples below
+3. put `TaskHandler` in abstract Presenter or ViewModel to have an easy access in every Presenter
+```
+abstract class AbstractPresenter<T : AbstractContract.View> : MvpPresenter<T>(), AbstractContract.Presenter {
+    //
+    protected val taskHandler = TaskHandler()
+    //    
+}
+```
+4. don't forget to cancel all tasks on presenter or viewmodel destroy
+```
+abstract class AbstractPresenter<T : AbstractContract.View> : MvpPresenter<T>(), AbstractContract.Presenter {
+    //
+    override fun onDestroy() {
+        taskHandler.cancelAll()
+        super.onDestroy()
+    }
+    //
+}
+```
+5. launch task with `handle` method as shown in example
+```
+override fun onSetCardAsDefaultClicked(cardModel: CardModel) {
+        viewState.showLoading()
+        val setCardAsDefaultTask = CoroutineTask(
+                "setCardAsDefault",                                   // set an id that will correspond to task 
+                Task.Strategy.KillFirst,                              // cancel previous task with the same id if contains
+                { billingRepository.setCardAsDefault(cardModel.id) }, // provide suspend function as we use Coroutines
+                { // onSuccess
+                    viewState.hideLoading()
+                    refresh()
+                },
+                { // onError
+                    viewState.hideLoading()
+                    throwableHandler.handleThrowable(it)
+                }
+        )
+        taskHandler.handle(setCardAsDefaultTask)
+    }
+```
 
-### Prerequisites
+## Task usage
+Task is an interface that contains the following methods
+```
+interface Task {
+    fun getId(): String               // id that will be used by taskhandler to identify the same tasks
 
-What things you need to install the software and how to install them
+    fun execute(onFinish: () -> Unit) // method that executes the task
+
+    fun cancel()                      // method that cancels the task
+
+    fun getStatus(): Status           // get the status of the task
+
+    fun getStrategy(): Strategy       // identifying a Strategy to inform TaskHandler about destroying or keeping previous task with the same id
+}
+```
+
+Stasus - is a class to inform about the progress of executing
+```
+sealed class Status {
+        object InProgress : Status()
+        object Completed : Status()
+        object Cancelled : Status()
+}
+```
+
+##### Available strategies
+KeepFirst - keeps the previous task with the same id and don't start current
+KillFirst - cancels the previous task with the same id and start the current task
+```
+sealed class Strategy {
+        object KeepFirst : Strategy()
+        object KillFirst : Strategy()
+}
+```
+
+## Task implementation samples (not included to the library)
+### Coroutines
+```
+class CoroutineTask<T>(
+    private val id: String,
+    private val taskStrategy: Task.Strategy,
+    private val function: suspend () -> T,
+    private val onSuccess: (T) -> Unit,
+    private val onError: (Throwable) -> Unit,
+    private val scope: CoroutineScope = GlobalScope
+) : Task {
+
+    private var job: Job? = null
+
+    override fun getId(): String {
+        return id
+    }
+
+    override fun execute(onFinish: () -> Unit) {
+        if (job == null) {
+            job = scope.launch {
+                try {
+                    val result = function()
+                    withContext(Dispatchers.Main) { onSuccess(result) }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) { onError(e) }
+                }
+            }
+        }
+    }
+
+    override fun cancel() {
+        job?.cancel(null)
+    }
+
+    override fun getStatus(): Task.Status {
+        return when {
+            job?.isCompleted == true -> Task.Status.Completed
+            job?.isActive == true -> Task.Status.InProgress
+            else -> Task.Status.InProgress
+        }
+    }
+
+    override fun getStrategy(): Task.Strategy {
+        return taskStrategy
+    }
+}
+```
+```
+@FlowPreview
+class FlowTask<T>(
+    private val id: String,
+    private val taskStrategy: Task.Strategy,
+    private val function: suspend () -> Flow<T>,
+    private val onNext: (T) -> Unit,
+    private val onError: (Throwable) -> Unit,
+    private val scope: CoroutineScope = GlobalScope
+) : Task {
+
+    private var job: Job? = null
+
+    override fun getId(): String {
+        return id
+    }
+
+    override fun execute(onFinish: () -> Unit) {
+        if (job == null) {
+            job = scope.launch {
+                try {
+                    function().collect(object : FlowCollector<T> {
+                        override suspend fun emit(value: T) {
+                            withContext(Dispatchers.Main) { onNext(value) }
+                        }
+                    })
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) { onError(e) }
+                }
+            }
+        }
+    }
+
+    override fun cancel() {
+        job?.cancel()
+    }
+
+    override fun getStatus(): Task.Status {
+        return when {
+            job?.isCompleted == true -> Task.Status.Completed
+            job?.isActive == true -> Task.Status.InProgress
+            else -> Task.Status.InProgress
+        }
+    }
+
+    override fun getStrategy(): Task.Strategy {
+        return taskStrategy
+    }
+}
+```
+
+### Rx
+```
+class SingleTask<T>(
+    private val id: String,
+    private val taskStrategy: Task.Strategy,
+    private val single: Single<T>,
+    private val onSuccess: (T) -> Unit,
+    private val onError: (Throwable) -> Unit,
+    private var scheduler: Scheduler = Schedulers.io()
+) : Task {
+
+    private var disposable: Disposable? = null
+
+    override fun getId(): String {
+        return id
+    }
+
+    override fun execute(onFinish: () -> Unit) {
+        if (disposable == null) {
+            disposable = single
+                .subscribeOn(scheduler)
+                .observeOn(AndroidSchedulers.mainThread())
+                .doFinally(onFinish)
+                .subscribe(onSuccess, onError)
+        }
+    }
+
+    override fun cancel() {
+        disposable?.dispose()
+    }
+
+    override fun getStatus(): Task.Status {
+        if (disposable != null && disposable?.isDisposed == false) {
+            return Task.Status.InProgress
+        }
+        return Task.Status.Completed
+    }
+
+    override fun getStrategy(): Task.Strategy {
+        return taskStrategy
+    }
+}
+```
 
 ```
-Give examples
+class CompletableTask(
+    private val id: String,
+    private val taskStrategy: Task.Strategy,
+    private val completable: Completable,
+    private val onComplete: () -> Unit,
+    private val onError: (Throwable) -> Unit,
+    private var scheduler: Scheduler = Schedulers.io()
+) : Task {
+
+    private var disposable: Disposable? = null
+
+    override fun getId(): String {
+        return id
+    }
+
+    override fun execute(onFinish: () -> Unit) {
+        if (disposable == null) {
+            disposable = completable
+                .subscribeOn(scheduler)
+                .observeOn(AndroidSchedulers.mainThread())
+                .doFinally(onFinish)
+                .subscribe(onComplete, onError)
+        }
+    }
+
+    override fun cancel() {
+        disposable?.dispose()
+    }
+
+    override fun getStatus(): Task.Status {
+        if (disposable != null && disposable?.isDisposed == false) {
+            return Task.Status.InProgress
+        }
+        return Task.Status.Completed
+    }
+
+    override fun getStrategy(): Task.Strategy {
+        return taskStrategy
+    }
+
+}
+```
+
+```
+class FlowableTask<T>(
+    private val id: String,
+    private val taskStrategy: Task.Strategy,
+    private val flowable: Flowable<T>,
+    private val onNext: (T) -> Unit,
+    private val onComplete: () -> Unit,
+    private val onError: (Throwable) -> Unit,
+    private var scheduler: Scheduler = Schedulers.io()
+) : Task {
+
+    private var disposable: Disposable? = null
+
+    override fun getId(): String {
+        return id
+    }
+
+    override fun execute(onFinish: () -> Unit) {
+        if (disposable == null) {
+            disposable = flowable
+                .subscribeOn(scheduler)
+                .observeOn(AndroidSchedulers.mainThread())
+                .doFinally(onFinish)
+                .subscribe(onNext, onError, onComplete)
+        }
+    }
+
+    override fun cancel() {
+        disposable?.dispose()
+    }
+
+    override fun getStatus(): Task.Status {
+        if (disposable != null && disposable?.isDisposed == false) {
+            return Task.Status.InProgress
+        }
+        return Task.Status.Completed
+    }
+
+    override fun getStrategy(): Task.Strategy {
+        return taskStrategy
+    }
+}
 ```
 
 ### Installing
