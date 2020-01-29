@@ -12,7 +12,8 @@ class TaskHandler {
     fun handle(task: Task) {
         when (task.getStrategy()) {
             Task.Strategy.KeepFirst -> {
-                if (!tasks.containsKey(task.getId())) {
+                val previousTask = tasks[task.getId()]
+                if (previousTask?.getStatus() != Task.Status.InProgress) {
                     execute(task)
                 }
             }

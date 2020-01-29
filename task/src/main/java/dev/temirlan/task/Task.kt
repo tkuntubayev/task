@@ -6,9 +6,9 @@ package dev.temirlan.task
 interface Task {
 
     sealed class Status {
-        object Cancelled : Status()
         object InProgress : Status()
         object Completed : Status()
+        object Cancelled : Status()
     }
 
     sealed class Strategy {

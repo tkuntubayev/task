@@ -7,7 +7,6 @@ android {
     compileSdkVersion 28
     buildToolsVersion "29.0.0"
 
-
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 28
@@ -24,17 +23,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.appcompat:appcompat:1.0.2'
-    implementation 'androidx.core:core-ktx:1.0.2'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
 }
 
 repositories {
@@ -46,7 +39,7 @@ publish {
     repoName = 'common'
     groupId = 'dev.temirlan.common'
     artifactId = 'task'
-    publishVersion = '1.0.0'
+    publishVersion = '1.0.1'
     desc = 'Task executing library'
     website = 'https://github.com/tkuntubayev/task'
 }
