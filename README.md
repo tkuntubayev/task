@@ -1,4 +1,4 @@
-# Asynchronous tasks management
+# Android asynchronous tasks management
 Sometimes there is need to cancel some asynchronous execution while launching a new one with the same id, sometimes vice versa. This library provides an easy API to control every asynchronous task (no matter Coroutines, Rx, or something else). More details of the usage can be found in Medium post (I'll post it in a few days).
 
 ## Getting Started with TaskHandler
