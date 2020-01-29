@@ -21,7 +21,7 @@ allprojects {
 ```
 * add to **module** `build.gradle`
 ``` gradle
-implementation "dev.temirlan.common:task:1.0.0"
+implementation 'dev.temirlan.common:task:1.0.0'
 ```
 
 2. implement your own `Task` or find some that matches your preferences (Coroutines or Rx) from samples below
