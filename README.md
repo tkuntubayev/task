@@ -83,7 +83,7 @@ interface Task {
 ```
 
 #### Available task statuses
-Stasus - class that informs about the current task state
+Status - class that informs about the current task state
 ```
 sealed class Status {
         object InProgress : Status()
