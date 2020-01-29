@@ -67,7 +67,7 @@ override fun onSetCardAsDefaultClicked(cardModel: CardModel) {
 ```
 
 ## Task usage
-Task is an interface that contains the following methods
+Task is an interface that contains the following methods. Use it to execute your domain logic
 ```
 interface Task {
     fun getId(): String               // id that will be used by taskhandler to identify the same tasks
@@ -335,10 +335,6 @@ class FlowableTask<T>(
     }
 }
 ```
-
-## Some advices
-
-Use task to execute your domain logic
 
 ## Contributing
 
