@@ -127,6 +127,8 @@ class CoroutineTask<T>(
                     withContext(Dispatchers.Main) { onSuccess(result) }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) { onError(e) }
+                } finally {
+                    withContext(Dispatchers.Main) { onFinish() }
                 }
             }
         }
