@@ -7,7 +7,7 @@ Follow these instructions to implement this library in your project
 
 1. add depencencies
 
-1.1 add to **project** `build.gradle`
+* add to **project** `build.gradle`
 ``` gradle
 allprojects {
     repositories {
@@ -19,8 +19,7 @@ allprojects {
     }
 }
 ```
-
-1.2 add to **module** `build.gradle`
+* add to **module** `build.gradle`
 ``` gradle
 implementation "dev.temirlan.common:task:1.0.0"
 ```
