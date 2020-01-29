@@ -5,10 +5,26 @@ Sometimes there is need to cancel some asynchronous execution while launching a 
 
 Follow this instructions to implement this library in your project
 
-1. add to **module** `build.gradle`
+1. add depencencies
+
+1.1 add to **project** `build.gradle`
+```
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        //
+        maven { url "https://dl.bintray.com/temirlan/common/" }
+        //
+    }
+}
+```
+
+1.2 add to **module** `build.gradle`
 ```
 implementation "dev.temirlan.common:task:1.0.0"
 ```
+
 2. implement your own `Task` or find some that matching your preferences (Coroutines or Rx) from samples below
 3. put `TaskHandler` in abstract Presenter or ViewModel to have an easy access in every Presenter
 ```
