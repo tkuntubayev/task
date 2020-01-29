@@ -8,7 +8,7 @@ Follow these instructions to implement this library in your project
 1. add depencencies
 
 1.1 add to **project** `build.gradle`
-```
+``` gradle
 allprojects {
     repositories {
         google()
@@ -21,13 +21,13 @@ allprojects {
 ```
 
 1.2 add to **module** `build.gradle`
-```
+``` gradle
 implementation "dev.temirlan.common:task:1.0.0"
 ```
 
 2. implement your own `Task` or find some that matches your preferences (Coroutines or Rx) from samples below
 3. put `TaskHandler` in abstract Presenter or ViewModel to have an easy access in every Presenter
-```
+``` kotlin
 abstract class AbstractPresenter<T : AbstractContract.View> : MvpPresenter<T>(), AbstractContract.Presenter {
     //
     protected val taskHandler = TaskHandler()
@@ -35,7 +35,7 @@ abstract class AbstractPresenter<T : AbstractContract.View> : MvpPresenter<T>(),
 }
 ```
 4. don't forget to cancel all tasks on presenter or viewmodel destroy
-```
+``` kotlin
 abstract class AbstractPresenter<T : AbstractContract.View> : MvpPresenter<T>(), AbstractContract.Presenter {
     //
     override fun onDestroy() {
@@ -46,7 +46,7 @@ abstract class AbstractPresenter<T : AbstractContract.View> : MvpPresenter<T>(),
 }
 ```
 5. define and launch a task with TaskHandler's `handle` method in your presenter(viewmodel) as shown in example. One task cannot be launched twice.
-```
+``` kotlin
 override fun onSetCardAsDefaultClicked(cardModel: CardModel) {
         viewState.showLoading()
         val setCardAsDefaultTask = CoroutineTask(
@@ -68,7 +68,7 @@ override fun onSetCardAsDefaultClicked(cardModel: CardModel) {
 
 ## Task usage
 Task is an interface that contains the following methods. Use it to execute your domain logic
-```
+``` kotlin
 interface Task {
     fun getId(): String               // id that will be used by taskhandler to identify the same tasks
 
@@ -84,7 +84,7 @@ interface Task {
 
 #### Available task statuses
 Status - class that informs about the current task state
-```
+``` kotlin
 sealed class Status {
         object InProgress : Status()
         object Completed : Status()
@@ -93,10 +93,9 @@ sealed class Status {
 ```
 
 #### Available task strategies
-KeepFirst - TaskHandler keeps the previous task with the same id and doesn't start current
-
-KillFirst - TaskHandler cancels the previous task with the same id and starts the current task
-```
+* KeepFirst - TaskHandler keeps the previous task with the same id and doesn't start current
+* KillFirst - TaskHandler cancels the previous task with the same id and starts the current task
+``` kotlin
 sealed class Strategy {
         object KeepFirst : Strategy()
         object KillFirst : Strategy()
@@ -105,7 +104,7 @@ sealed class Strategy {
 
 ## Task implementation samples (not included to the library). Copy or implement your own Task
 ### Coroutines
-```
+``` kotlin
 class CoroutineTask<T>(
     private val id: String,
     private val taskStrategy: Task.Strategy,
@@ -152,7 +151,8 @@ class CoroutineTask<T>(
     }
 }
 ```
-```
+
+``` kotlin
 @FlowPreview
 class FlowTask<T>(
     private val id: String,
@@ -205,7 +205,7 @@ class FlowTask<T>(
 ```
 
 ### Rx
-```
+``` kotlin
 class SingleTask<T>(
     private val id: String,
     private val taskStrategy: Task.Strategy,
@@ -248,7 +248,7 @@ class SingleTask<T>(
 }
 ```
 
-```
+``` kotlin
 class CompletableTask(
     private val id: String,
     private val taskStrategy: Task.Strategy,
@@ -292,7 +292,7 @@ class CompletableTask(
 }
 ```
 
-```
+``` kotlin
 class FlowableTask<T>(
     private val id: String,
     private val taskStrategy: Task.Strategy,
