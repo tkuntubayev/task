@@ -1,5 +1,5 @@
-# Asynchronous tasks managing
-Sometimes there is need to cancel some asynchronous execution while launching a new one with the same id, sometimes vice versa. It's not comfortable to control it in each place that contains asynchronous code. This library provides an easy API to control every asynchronous task (Coroutines, Rx, or something else). More details of the usage can be found in Medium post (I'll post it in a few days).
+# Asynchronous tasks management
+Sometimes there is need to cancel some asynchronous execution while launching a new one with the same id, sometimes vice versa. This library provides an easy API to control every asynchronous task (no matter Coroutines, Rx, or something else). More details of the usage can be found in Medium post (I'll post it in a few days).
 
 ## Getting Started with TaskHandler
 
@@ -7,9 +7,9 @@ Follow this instructions to implement this library in your project
 
 1. add to **module** `build.gradle`
 ```
-implementation "dev.temirlan.common:task:$task_version"
+implementation "dev.temirlan.common:task:1.0.0"
 ```
-2. implement your own `Task` or find some that matching your preferences(Coroutines or Rx) from samples below
+2. implement your own `Task` or find some that matching your preferences (Coroutines or Rx) from samples below
 3. put `TaskHandler` in abstract Presenter or ViewModel to have an easy access in every Presenter
 ```
 abstract class AbstractPresenter<T : AbstractContract.View> : MvpPresenter<T>(), AbstractContract.Presenter {
@@ -29,19 +29,19 @@ abstract class AbstractPresenter<T : AbstractContract.View> : MvpPresenter<T>(),
     //
 }
 ```
-5. launch task with `handle` method as shown in example
+5. define and launch a task with TaskHandler's `handle` method in your presenter(viewmodel) as shown in example. One task cannot be launched twice.
 ```
 override fun onSetCardAsDefaultClicked(cardModel: CardModel) {
         viewState.showLoading()
         val setCardAsDefaultTask = CoroutineTask(
-                "setCardAsDefault",                                   // set an id that will correspond to task 
-                Task.Strategy.KillFirst,                              // cancel previous task with the same id if contains
-                { billingRepository.setCardAsDefault(cardModel.id) }, // provide suspend function as we use Coroutines
-                { // onSuccess
+                "setCardAsDefault",                                   // set an id that will correspond to current task 
+                Task.Strategy.KillFirst,                              // set the necessary strategy (KillFirst will destroy previous task with the same id)
+                { billingRepository.setCardAsDefault(cardModel.id) }, // provide suspend function (cause we use CoroutineTask)
+                { // use the result of the execution
                     viewState.hideLoading()
                     refresh()
                 },
-                { // onError
+                { // handle exeption if something goes wrong
                     viewState.hideLoading()
                     throwableHandler.handleThrowable(it)
                 }
@@ -62,11 +62,12 @@ interface Task {
 
     fun getStatus(): Status           // get the status of the task
 
-    fun getStrategy(): Strategy       // identifying a Strategy to inform TaskHandler about destroying or keeping previous task with the same id
+    fun getStrategy(): Strategy       // identifying a Strategy to inform TaskHandler about what to do with the previous task with the same id (KillFirst or KeepFirst). See description below
 }
 ```
 
-Stasus - is a class to inform about the progress of executing
+#### Available task statuses
+Stasus - class that informs about the current task state
 ```
 sealed class Status {
         object InProgress : Status()
@@ -75,9 +76,9 @@ sealed class Status {
 }
 ```
 
-##### Available strategies
-KeepFirst - keeps the previous task with the same id and don't start current
-KillFirst - cancels the previous task with the same id and start the current task
+##### Available task strategies
+KeepFirst - TaskHandler keeps the previous task with the same id and doesn't start current
+KillFirst - TaskHandler cancels the previous task with the same id and starts the current task
 ```
 sealed class Strategy {
         object KeepFirst : Strategy()
@@ -85,7 +86,7 @@ sealed class Strategy {
 }
 ```
 
-## Task implementation samples (not included to the library)
+## Task implementation samples (not included to the library). Copy or implement your own Task
 ### Coroutines
 ```
 class CoroutineTask<T>(
@@ -124,6 +125,7 @@ class CoroutineTask<T>(
         return when {
             job?.isCompleted == true -> Task.Status.Completed
             job?.isActive == true -> Task.Status.InProgress
+            job?.isCancelled == true -> Task.Status.Cancelled
             else -> Task.Status.InProgress
         }
     }
@@ -174,6 +176,7 @@ class FlowTask<T>(
         return when {
             job?.isCompleted == true -> Task.Status.Completed
             job?.isActive == true -> Task.Status.InProgress
+            job?.isCancelled == true -> Task.Status.Cancelled
             else -> Task.Status.InProgress
         }
     }
@@ -316,74 +319,14 @@ class FlowableTask<T>(
 }
 ```
 
-### Installing
+## Some advices
 
-A step by step series of examples that tell you how to get a development env running
-
-Say what the step will be
-
-```
-Give the example
-```
-
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+Put your domain logic to the task
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+This repo is open for contributing
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+* **Temirlan Kuntubayev** - *Initial work* - [github](https://github.com/tkuntubayev)
