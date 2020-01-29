@@ -3,7 +3,7 @@ Sometimes there is need to cancel some asynchronous execution while launching a 
 
 ## Getting Started with TaskHandler
 
-Follow this instructions to implement this library in your project
+Follow these instructions to implement this library in your project
 
 1. add depencencies
 
