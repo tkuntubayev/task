@@ -44,7 +44,7 @@ abstract class AbstractPresenter<T : AbstractContract.View> : MvpPresenter<T>(),
     //
 }
 ```
-5. define and launch a task with TaskHandler's `handle` method in your presenter(viewmodel) as shown in example. One task cannot be launched twice.
+5. define and launch a task with TaskHandler's `handle` method in your presenter(viewmodel) as shown in example.
 ``` kotlin
 override fun onSetCardAsDefaultClicked(cardModel: CardModel) {
         viewState.showLoading()
