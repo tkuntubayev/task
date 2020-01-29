@@ -321,7 +321,7 @@ class FlowableTask<T>(
 
 ## Some advices
 
-Put your domain logic to the task
+Use task to execute your domain logic
 
 ## Contributing
 
