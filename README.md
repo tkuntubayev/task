@@ -94,6 +94,7 @@ sealed class Status {
 
 ##### Available task strategies
 KeepFirst - TaskHandler keeps the previous task with the same id and doesn't start current
+
 KillFirst - TaskHandler cancels the previous task with the same id and starts the current task
 ```
 sealed class Strategy {
