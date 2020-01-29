@@ -66,7 +66,7 @@ override fun onSetCardAsDefaultClicked(cardModel: CardModel) {
 ```
 
 ## Task usage
-Task is an interface that contains the following methods. Use it to execute your domain logic
+Task is an interface that contains the following methods. Implement and use it to execute your domain logic
 ``` kotlin
 interface Task {
     fun getId(): String               // id that will be used by taskhandler to identify the same tasks
