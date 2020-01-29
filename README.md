@@ -25,7 +25,7 @@ allprojects {
 implementation "dev.temirlan.common:task:1.0.0"
 ```
 
-2. implement your own `Task` or find some that matching your preferences (Coroutines or Rx) from samples below
+2. implement your own `Task` or find some that matches your preferences (Coroutines or Rx) from samples below
 3. put `TaskHandler` in abstract Presenter or ViewModel to have an easy access in every Presenter
 ```
 abstract class AbstractPresenter<T : AbstractContract.View> : MvpPresenter<T>(), AbstractContract.Presenter {
