@@ -71,7 +71,7 @@ Task is an interface that contains the following methods. Implement and use it t
 interface Task {
     fun getId(): String               // id that will be used by taskhandler to identify the same tasks
 
-    fun execute(onFinish: () -> Unit) // method that executes the task
+    fun execute(onFinish: () -> Unit) // method that executes the task. onFinish is callback function to inform TaskHandler about completing
 
     fun cancel()                      // method that cancels the task
 
